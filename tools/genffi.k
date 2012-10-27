@@ -63,7 +63,7 @@ void generate_function(String[] data, FunctionInfo info) {
     if (info.returnType == "void") {
         stdout.println("\treturnvoid(${info.name});");
     } else {
-        stdout.println("\tRETURN${info.returnType}(${info.name}, ret);");
+        stdout.println("\tRETURN${info.returnType}(ret);");
     }
     stdout.println("}\n");
 }
@@ -71,10 +71,10 @@ void generate_function(String[] data, FunctionInfo info) {
 String generate_signature(FunctionInfo info) {
     String[] args = info.argumentsType;
     String tmp = "_Public, _F(K${info.name}), TY_${info.returnType}, ";
-    if (args.getSize() > 0) {
-        tmp = tmp + "TY_${args.get(0)}, ";
-    }
     tmp = tmp + args.getSize() + ", ";
+    if (args.getSize() > 0) {
+        tmp = tmp + "TY_${args.get(0)}, FN_${0}, ";
+    }
     int i = 1;
     while (i < args.getSize()) {
         tmp = tmp + ("TY_${args.get(i)}, FN_${i},");
@@ -112,11 +112,13 @@ void main() {
         generate_function(data, info);
         func_info.add(generate_signature(info));
     }
-    stdout.println("static kbool_t PACKAGE_INIT_PKG(PACKAGE_NAME)(KonohaContext *kctx, kNameSpace *ns, int argc, const char**args, KTraceInfo *trace)");
+	stdout.println("#define _Public   kMethod_Public");
+	stdout.println("static kbool_t PACKAGE_INIT_PKG(LIBVIRT_PACKAGE_NAME)(KonohaContext *kctx, kNameSpace *ns, int argc, const char**args, KTraceInfo *trace)");
     stdout.println("{");
     int i = 0;
+	stdout.println("\tvirt_loadStructData(kctx, ns, trace);");
     while (i < 8) {
-        stdout.println("int FN_${i} = FN_(\"arg${i}\");");
+        stdout.println("\tint FN_${i} = FN_(\"arg${i}\");");
         i = i + 1;
     }
     stdout.println("\tKDEFINE_METHOD MethodData[] = {");
@@ -129,17 +131,17 @@ void main() {
     stdout.println("\treturn true;");
     stdout.println("}");
 
-    stdout.println("static kbool_t PACKAGE_SETUP_PKG(PACKAGE_NAME)(KonohaContext *kctx, kNameSpace *ns, isFirstTime_t isFirstTime, KTraceInfo *trace)");
+    stdout.println("static kbool_t PACKAGE_SETUP_PKG(LIBVIRT_PACKAGE_NAME)(KonohaContext *kctx, kNameSpace *ns, isFirstTime_t isFirstTime, KTraceInfo *trace)");
     stdout.println("{");
     stdout.println("\treturn true;");
     stdout.println("}");
     stdout.println("");
-    stdout.println("KDEFINE_PACKAGE* PACKAGE_INIT(PACKAGE_NAME)(void)");
+    stdout.println("KDEFINE_PACKAGE* PACKAGE_INIT(LIBVIRT_PACKAGE_NAME)(void)");
     stdout.println("{");
     stdout.println("\tstatic KDEFINE_PACKAGE d = {0};");
-    stdout.println("\tKSetPackageName(d, PACKAGE_STRING(PACKAGE_NAME), \"1.0\");");
-    stdout.println("\td.initPackage  = PACKAGE_INIT_PKG(PACKAGE_NAME);");
-    stdout.println("\td.setupPackage = PACKAGE_SETUP_PKG(PACKAGE_NAME);");
+    stdout.println("\tKSetPackageName(d, LIBVIRT_PACKAGE_NAME, \"1.0\");");
+    stdout.println("\td.initPackage  = PACKAGE_INIT_PKG(LIBVIRT_PACKAGE_NAME);");
+    stdout.println("\td.setupPackage = PACKAGE_SETUP_PKG(LIBVIRT_PACKAGE_NAME);");
     stdout.println("\treturn &d;");
     stdout.println("}");
 
